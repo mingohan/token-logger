@@ -1,0 +1,36 @@
+name: Token Usage Logger
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # every hour
+  workflow_dispatch:        # manual trigger for testing
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          python -m camoufox fetch
+
+      - name: Run scraper
+        env:
+          CLAUDE_COOKIE: ${{ secrets.CLAUDE_COOKIE }}
+          OLLAMA_COOKIE: ${{ secrets.OLLAMA_COOKIE }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          CLAUDE_SHEET_NAME: ${{ vars.CLAUDE_SHEET_NAME || 'Claude' }}
+          OLLAMA_SHEET_NAME: ${{ vars.OLLAMA_SHEET_NAME || 'Ollama' }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_REPO: ${{ github.repository }}
+        run: python scraper.py
